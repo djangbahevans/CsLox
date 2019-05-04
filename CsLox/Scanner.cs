@@ -110,7 +110,6 @@ namespace CsLox
                         {
                             if (Match('*'))
                             {
-                                //Advance();
                                 if (Match('/')) break; // Closing */ reached
                             }
                             else if (Peek() == '\n') line++;

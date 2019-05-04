@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Text;
 
 namespace CsLox
 {
@@ -8,13 +6,13 @@ namespace CsLox
     {
         public string Print(Expr expr) => expr.Accept(this);
 
-        public string VisitBinaryExpr(Expr.Binary expr) => Parethesize(expr.op.lexeme, expr.left, expr.right);
+        public string VisitBinaryExpr(Expr.Binary expr) => Parethesize(expr.op.Lexeme, expr.left, expr.right);
 
         public string VisitGroupingExpr(Expr.Grouping expr) => Parethesize("group", expr.expression);
 
         public string VisitLiteralExpr(Expr.Literal expr) => (expr.value == null) ? "null" : expr.value.ToString();
 
-        public string VisitUnaryExpr(Expr.Unary expr) => Parethesize(expr.op.lexeme, expr.right);
+        public string VisitUnaryExpr(Expr.Unary expr) => Parethesize(expr.op.Lexeme, expr.right);
 
         private string Parethesize(string name, params Expr[] exprs)
         {

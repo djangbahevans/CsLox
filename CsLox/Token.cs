@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace CsLox
+﻿namespace CsLox
 {
     class Token
     {
-        public readonly TokenType type;
-        public readonly string lexeme;
-        public readonly object literal;
-        public readonly int line;
+        private readonly TokenType type;
+        private readonly string lexeme;
+        private readonly object literal;
+        private readonly int line;
 
         public Token(TokenType type, string lexeme, object literal, int line)
         {
@@ -19,9 +15,17 @@ namespace CsLox
             this.line = line;
         }
 
+        public int Line => line;
+
+        public object Literal => literal;
+
+        public string Lexeme => lexeme;
+
+        public TokenType Type => type;
+
         public override string ToString()
         {
-            return type + " " + lexeme + " " + literal;
+            return Type + " " + Lexeme + " " + Literal;
         }
     }
 }

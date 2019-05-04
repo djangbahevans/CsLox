@@ -105,7 +105,7 @@ namespace CsLox
             if (Match(TRUE)) return new Expr.Literal(true);
             if (Match(NIL)) return new Expr.Literal(null);
 
-            if (Match(NUMBER, STRING)) return new Expr.Literal(Previous().literal);
+            if (Match(NUMBER, STRING)) return new Expr.Literal(Previous().Literal);
 
             if (Match(LEFT_PAREN))
             {
@@ -136,9 +136,9 @@ namespace CsLox
 
             while (IsAtEnd())
             {
-                if (Previous().type == SEMICOLON) return;
+                if (Previous().Type == SEMICOLON) return;
 
-                switch (Peek().type)
+                switch (Peek().Type)
                 {
                     case CLASS:
                     case FUN:
@@ -171,7 +171,7 @@ namespace CsLox
         private bool Check(TokenType type)
         {
             if (IsAtEnd()) return false;
-            return Peek().type == type;
+            return Peek().Type == type;
         }
 
         private Token Advance()
@@ -182,7 +182,7 @@ namespace CsLox
 
         private bool IsAtEnd()
         {
-            return Peek().type == EOF;
+            return Peek().Type == EOF;
         }
 
         private Token Peek()

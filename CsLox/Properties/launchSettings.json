@@ -1,8 +1,7 @@
 {
   "profiles": {
     "CsLox": {
-      "commandName": "Project",
-      "commandLineArgs": "\"D:\\Users\\Kumasi Hive\\source\\repos\\CsLox\\CsLox\\lox.lox"
+      "commandName": "Project"
     }
   }
 }
