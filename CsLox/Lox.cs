@@ -7,14 +7,14 @@ namespace CsLox
     class Lox
     {
         private static readonly Interpreter interpreter = new Interpreter();
-        static bool hadError = false;
-        static bool hadRuntimeError = false;
+        private static bool hadError = false;
+        private static bool hadRuntimeError = false;
 
         static int Main(string[] args)
         {
             if (args.Length > 1)
             {
-                System.Console.WriteLine("Usage: CsLox [script]");
+                Console.WriteLine("Usage: CsLox [script]");
                 return 64;
             }
             else if (args.Length == 1)
@@ -30,7 +30,9 @@ namespace CsLox
 
         internal static void RuntimeError(RuntimeError error)
         {
-            Console.Error.WriteLine(error.Message + "\n[line " + error.Token.Line + "]");
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Error.WriteLine($"{error.Message} \n[line {error.Token.Line}]");
+            Console.ForegroundColor = ConsoleColor.Gray;
         }
 
         private static void RunPrompt()
@@ -45,11 +47,10 @@ namespace CsLox
 
         private static void RunFile(string path)
         {
-            string file = File.ReadAllText(path);
-            Run(file);
+            Run(File.ReadAllText(path));
 
-            if (hadError) Environment.Exit(65);
-            if (hadRuntimeError) Environment.Exit(70);
+            if (hadError) System.Environment.Exit(65);
+            if (hadRuntimeError) System.Environment.Exit(70);
         }
 
         private static void Run(string source)
@@ -57,11 +58,11 @@ namespace CsLox
             Scanner scanner = new Scanner(source);
             List<Token> tokens = scanner.ScanTokens();
             Parser parser = new Parser(tokens);
-            Expr expression = parser.Parse();
+            List<Stmt> statements = parser.Parse();
 
             if (hadError) return;
 
-            interpreter.Interpret(expression);
+            interpreter.Interpret(statements);
         }
 
         public static void Error(int line, string message)
@@ -71,13 +72,15 @@ namespace CsLox
 
         private static void Report(int line, string where, string message)
         {
-            Console.Error.WriteLine("[line " + line + "] Error" + where + ": " + message);
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Error.WriteLine($"[line {line}] Error {where}: {message}");
+            Console.ForegroundColor = ConsoleColor.Gray;
         }
 
         internal static void Error(Token token, string message)
         {
-            if (token.Type == TokenType.EOF) Report(token.Line, " at end", message);
-            else Report(token.Line, " at '" + token.Lexeme + "'", message);
+            if (token.Type == TokenType.EOF) Report(token.Line, "at end", message);
+            else Report(token.Line, $" at '{token.Lexeme}'", message);
         }
     }
 }

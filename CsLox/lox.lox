@@ -1,13 +1,6 @@
-/*
-
-Comment
-
-*/
-
-var x = +2/3
-
-/*
-
-Comment
-
-*/
+var a = 1;
+{
+  var a = a + 2;
+  print a;
+}
+print a/0;

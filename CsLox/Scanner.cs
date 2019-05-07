@@ -185,7 +185,11 @@ namespace CsLox
         {
             while (IsAlphaNumeric(Peek())) Advance();
 
-            AddToken(IDENTIFIER);
+            // See if Identifier is a keyword
+            string text = source.Substring(start, current - start);
+            keywords.TryGetValue(text, out TokenType type);
+            if (type == LEFT_PAREN) type = IDENTIFIER;
+            AddToken(type);
         }
 
         private bool IsAlphaNumeric(char c) => IsAlpha(c) || char.IsDigit(c);

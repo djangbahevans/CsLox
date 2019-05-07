@@ -6,6 +6,11 @@ namespace CsLox
     {
         public string Print(Expr expr) => expr.Accept(this);
 
+        public string VisitAssignExpr(Expr.Assign expr)
+        {
+            throw new System.NotImplementedException();
+        }
+
         public string VisitBinaryExpr(Expr.Binary expr) => Parethesize(expr.op.Lexeme, expr.left, expr.right);
 
         public string VisitGroupingExpr(Expr.Grouping expr) => Parethesize("group", expr.expression);
@@ -13,6 +18,11 @@ namespace CsLox
         public string VisitLiteralExpr(Expr.Literal expr) => (expr.value == null) ? "null" : expr.value.ToString();
 
         public string VisitUnaryExpr(Expr.Unary expr) => Parethesize(expr.op.Lexeme, expr.right);
+
+        public string VisitVariableExpr(Expr.Variable expr)
+        {
+            throw new System.NotImplementedException();
+        }
 
         private string Parethesize(string name, params Expr[] exprs)
         {

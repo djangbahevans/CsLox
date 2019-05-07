@@ -1,8 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.2</TargetFramework>
+    <Authors>Evans Djangbah</Authors>
+    <Company>Kumasi Hive</Company>
+    <Description>A C# implementation of the Lox language</Description>
   </PropertyGroup>
 
 </Project>

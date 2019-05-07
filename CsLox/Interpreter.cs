@@ -1,22 +1,32 @@
 ﻿using System;
+using System.Collections.Generic;
 using static CsLox.TokenType;
 
 namespace CsLox
 {
-    class Interpreter : Expr.IVisitor<object>
+    class Interpreter : Expr.IVisitor<object>, Stmt.IVisitor<object>
     {
-        internal void Interpret(Expr expression)
+        private Environment environment = new Environment();
+
+        internal void Interpret(List<Stmt> statements)
         {
             try
             {
-                object value = Evaluate(expression);
-                Console.WriteLine(Stringify(value));
+                foreach (Stmt statement in statements)
+                {
+                    Execute(statement);
+                }
             }
             catch (RuntimeError error)
             {
 
                 Lox.RuntimeError(error);
             }
+        }
+
+        private void Execute(Stmt statement)
+        {
+            statement.Accept(this);
         }
 
         private string Stringify(object value)
@@ -65,6 +75,7 @@ namespace CsLox
                     return (double)left - (double)right;
                 case SLASH:
                     CheckNumberOperand(expr.op, left, right);
+                    if ((double)right == 0) throw new RuntimeError(expr.op, "Cannot divide by zero.");
                     return (double)left / (double)right;
                 case STAR:
                     CheckNumberOperand(expr.op, left, right);
@@ -72,8 +83,8 @@ namespace CsLox
                 case PLUS:
                     if (left is double && right is double)
                         return (double)left + (double)right;
-                    if (left is string && right is string)
-                        return (string)left + (string)right;
+                    if (left is string || right is string)
+                        return left.ToString() + right.ToString();
 
                     throw new RuntimeError(expr.op, "Operands must be two numbers or two strings.");
             }
@@ -133,6 +144,63 @@ namespace CsLox
             }
 
             return null;
+        }
+
+        object Stmt.IVisitor<object>.VisitExpressionStmt(Stmt.Expression stmt)
+        {
+            Evaluate(stmt.expression);
+            return null;
+        }
+
+        object Stmt.IVisitor<object>.VisitPrintStmt(Stmt.Print stmt)
+        {
+            object value = Evaluate(stmt.expression);
+            Console.WriteLine(Stringify(value));
+            return null;
+        }
+
+        public object VisitVarStmt(Stmt.Var stmt)
+        {
+            object value = null;
+            if (stmt.initializer != null) value = Evaluate(stmt.initializer);
+            environment.Define(stmt.name.Lexeme, value);
+            return null;
+        }
+
+        public object VisitVariableExpr(Expr.Variable expr)
+        {
+            return environment.Get(expr.name);
+        }
+
+        public object VisitAssignExpr(Expr.Assign expr)
+        {
+            object value = Evaluate(expr.value);
+
+            environment.Assign(expr.name, value);
+            return value;
+        }
+
+        public object VisitBlockStmt(Stmt.Block stmt)
+        {
+            ExecuteBlock(stmt.statements, new Environment(environment));
+            return null;
+        }
+
+        private void ExecuteBlock(List<Stmt> statements, Environment environment)
+        {
+            Environment previous = this.environment;
+            try
+            {
+                this.environment = environment;
+                foreach (Stmt statement in statements)
+                {
+                    Execute(statement);
+                }
+            }
+            finally
+            {
+                this.environment = previous;
+            }
         }
     }
 }
