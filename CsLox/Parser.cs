@@ -1,21 +1,47 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using static CsLox.TokenType;
 
 namespace CsLox
 {
-    class Parser
+    internal class Parser
     {
-        private class ParseError : SystemException { }
+        private readonly List<Token> _tokens;
 
-        private readonly List<Token> tokens;
-        private int current = 0;
+        private int _current = 0;
 
         public Parser(List<Token> tokens)
         {
-            this.tokens = tokens;
+            this._tokens = tokens;
         }
 
+        private Stmt.Function Function(string kind)
+        {
+            Token name = Consume(IDENTIFIER, $"Expect {kind} name.");
+            Consume(LEFT_PAREN, $"Expected '(' after {kind}");
+            List<Token> parameters = new List<Token>();
+            if (!Check(RIGHT_PAREN))
+            {
+                do
+                {
+                    if (parameters.Count() > 8) Error(Peek(), "Cannot have more than 8 parameters");
+                    parameters.Add(Consume(IDENTIFIER, "Expect parameter name."));
+                } while (Match(COMMA));
+            }
+
+            Consume(RIGHT_PAREN, "Expect ')' after parameters");
+
+            Consume(LEFT_BRACE, "Expect '{' before body");
+            List<Stmt> body = Block();
+            return new Stmt.Function(name, parameters, body);
+        }
+
+        /// <summary>
+        /// Parses source code and return a list of statements
+        /// </summary>
+        /// <returns>List of statements</returns>
         internal List<Stmt> Parse()
         {
             List<Stmt> statements = new List<Stmt>();
@@ -27,109 +53,16 @@ namespace CsLox
             return statements;
         }
 
-        private Stmt Declaration()
+        /// <summary>
+        /// Reports an error to the Lox environment and returns a ParseError object.
+        /// </summary>
+        /// <param name="token">The token that generated the error</param>
+        /// <param name="message">The error message to report</param>
+        /// <returns>ParseError object</returns>
+        private static ParseError Error(Token token, string message)
         {
-            try
-            {
-                if (Match(VAR)) return VarDeclaration();
-                return Statement();
-            }
-            catch (ParseError error)
-            {
-                Synchronize();
-                return null;
-            }
-        }
-
-        private Stmt VarDeclaration()
-        {
-            Token name = Consume(IDENTIFIER, "Expect vairable name.");
-
-            Expr initializer = null;
-            if (Match(EQUAL)) initializer = Expression();
-
-            Consume(SEMICOLON, "Expect ';' after variable initialization.");
-            return new Stmt.Var(name, initializer);
-        }
-
-        private Stmt Statement()
-        {
-            if (Match(PRINT)) return PrintStatement();
-            if (Match(LEFT_BRACE)) return new Stmt.Block(Block());
-
-            return ExpressionStatement();
-        }
-
-        private List<Stmt> Block()
-        {
-            List<Stmt> statements = new List<Stmt>();
-
-            while (!Check(RIGHT_BRACE) && !IsAtEnd()) statements.Add(Declaration());
-            Consume(RIGHT_BRACE, "Expect '}' after block.");
-            return statements;
-        }
-
-        private Stmt ExpressionStatement()
-        {
-            Expr expr = Expression();
-            Consume(SEMICOLON, "Expected ';' after value.");
-            return new Stmt.Expression(expr);
-        }
-
-        private Stmt PrintStatement()
-        {
-            Expr value = Expression();
-            Consume(SEMICOLON, "Expected ';' after value.");
-            return new Stmt.Print(value);
-        }
-
-        private Expr Expression() => Assignment();
-
-        private Expr Assignment()
-        {
-            Expr expr = Equality();
-
-            if (Match(EQUAL))
-            {
-                Token equals = Previous();
-                Expr value = Assignment();
-
-                if (expr is Expr.Variable)
-                {
-                    Token name = ((Expr.Variable)expr).name;
-                    return new Expr.Assign(name, value);
-                }
-                Error(equals, "Invalid assignment target.");
-            }
-            return expr;
-        }
-
-        private Expr Equality()
-        {
-            Expr expr = Comparison();
-
-            while (Match(BANG_EQUAL, EQUAL_EQUAL))
-            {
-                Token op = Previous();
-                Expr right = Comparison();
-                expr = new Expr.Binary(expr, op, right);
-            }
-
-            return expr;
-        }
-
-        private Expr Comparison()
-        {
-            Expr expr = Addition();
-
-            while (Match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL))
-            {
-                Token op = Previous();
-                Expr right = Addition();
-                expr = new Expr.Binary(expr, op, right);
-            }
-
-            return expr;
+            Lox.Error(token, message);
+            return new ParseError();
         }
 
         private Expr Addition()
@@ -146,6 +79,205 @@ namespace CsLox
             return expr;
         }
 
+        private Token Advance()
+        {
+            if (!IsAtEnd()) _current++;
+            return Previous();
+        }
+
+        private Expr And()
+        {
+            Expr expr = Equality();
+
+            while (Match(AND))
+            {
+                Token op = Previous();
+                Expr right = Equality();
+                expr = new Expr.Logical(expr, op, right);
+            }
+
+            return expr;
+        }
+
+        private Expr Assignment()
+        {
+            Expr expr = Or();
+
+            if (!Match(EQUAL)) return expr;
+            Token equals = Previous();
+            Expr value = Assignment();
+
+            if (expr is Expr.Variable variable)
+            {
+                Token name = variable.name;
+                return new Expr.Assign(name, value);
+            }
+
+            Error(@equals, "Invalid assignment target.");
+
+            return expr;
+        }
+
+        private List<Stmt> Block()
+        {
+            List<Stmt> statements = new List<Stmt>();
+
+            while (!Check(RIGHT_BRACE) && !IsAtEnd()) statements.Add(Declaration());
+            Consume(RIGHT_BRACE, "Expect '}' after block.");
+            return statements;
+        }
+
+        private Expr Call()
+        {
+            Expr expr = Primary();
+
+            while (true)
+            {
+                if (Match(LEFT_PAREN)) expr = FinishCall(expr);
+                else break;
+            }
+
+            return expr;
+        }
+
+        private bool Check(TokenType type)
+        {
+            if (IsAtEnd()) return false;
+            return Peek().Type == type;
+        }
+
+        private Expr Comparison()
+        {
+            Expr expr = Addition();
+
+            while (Match(GREATER, GREATER_EQUAL, LESS, LESS_EQUAL))
+            {
+                Token op = Previous();
+                Expr right = Addition();
+                expr = new Expr.Binary(expr, op, right);
+            }
+
+            return expr;
+        }
+
+        private Token Consume(TokenType type, string message)
+        {
+            if (Check(type)) return Advance();
+
+            throw Error(Peek(), message);
+        }
+
+        private Stmt Declaration()
+        {
+            try
+            {
+                if (Match(FUN)) return Function("function");
+                if (Match(VAR)) return VarDeclaration();
+                return Statement();
+            }
+            catch (ParseError error)
+            {
+                Synchronize();
+                return null;
+            }
+        }
+        private Expr Equality()
+        {
+            Expr expr = Comparison();
+
+            while (Match(BANG_EQUAL, EQUAL_EQUAL))
+            {
+                Token op = Previous();
+                Expr right = Comparison();
+                expr = new Expr.Binary(expr, op, right);
+            }
+
+            return expr;
+        }
+        private Expr Expression() => Assignment();
+
+        private Stmt ExpressionStatement()
+        {
+            Expr expr = Expression();
+            Consume(SEMICOLON, "Expected ';' after value.");
+            return new Stmt.Expression(expr);
+        }
+
+        private Expr FinishCall(Expr callee)
+        {
+            List<Expr> arguments = new List<Expr>();
+            if (!Check(RIGHT_PAREN))
+            {
+                do
+                {
+                    if (arguments.Count >= 8) Error(Peek(), "Cannot have more than 8 arguments");
+                    arguments.Add(Expression());
+                } while (Match(COMMA));
+            }
+
+            Token paren = Consume(RIGHT_PAREN, "Expect ')' after arguments");
+
+            return new Expr.Call(callee, paren, arguments);
+        }
+
+        private Stmt ForStatement()
+        {
+            Consume(LEFT_PAREN, "Expect '(' after 'for'.");
+
+            Stmt initializer;
+            if (Match(SEMICOLON)) initializer = null;
+            else if (Match(VAR)) initializer = VarDeclaration();
+            else initializer = ExpressionStatement();
+
+            Expr condition = null;
+            if (!Check(SEMICOLON)) condition = Expression();
+            Consume(SEMICOLON, "Expect ';' after loop condition");
+
+            Expr increment = null;
+            if (!Check(SEMICOLON)) increment = Expression();
+            Consume(RIGHT_PAREN, "Expect ';' after for clauses");
+
+            Stmt body = Statement();
+
+            if (increment != null)
+            {
+                body = new Stmt.Block(new List<Stmt>()
+                {
+                    body,
+                    new Stmt.Expression(increment)
+                });
+            }
+
+            if (condition == null) condition = new Expr.Literal(true);
+
+            body = new Stmt.While(condition, body);
+
+            if (initializer != null) body = new Stmt.Block(new List<Stmt>() { initializer, body });
+
+            return body;
+        }
+
+        private Stmt IfStatement()
+        {
+            Consume(LEFT_PAREN, "Expect '(' after if.");
+            Expr condition = Expression();
+            Consume(RIGHT_PAREN, "Expect ')' after if condition.");
+
+            Stmt thenBranch = Statement();
+            Stmt elseBranch = null;
+            if (Match(ELSE)) elseBranch = Statement();
+            return new Stmt.If(condition, thenBranch, elseBranch);
+        }
+
+        private bool IsAtEnd() => Peek().Type == EOF;
+
+        private bool Match(params TokenType[] types)
+        {
+            if (!types.Any(Check)) return false;
+            Advance();
+            return true;
+        }
+
         private Expr Multiplication()
         {
             Expr expr = Unary();
@@ -160,18 +292,25 @@ namespace CsLox
             return expr;
         }
 
-        private Expr Unary()
+        private Expr Or()
         {
-            if (Match(BANG, MINUS))
+            Expr expr = And();
+
+            while (Match(OR))
             {
                 Token op = Previous();
-                Expr right = Unary();
-                return new Expr.Unary(op, right);
+                Expr right = And();
+                expr = new Expr.Logical(expr, op, right);
             }
 
-            return Primary();
+            return expr;
         }
 
+        private Token Peek() => _tokens[_current];
+
+        private Token Previous() => _tokens[_current - 1];
+
+        [SuppressMessage("ReSharper", "InvertIf")]
         private Expr Primary()
         {
             if (Match(FALSE)) return new Expr.Literal(false);
@@ -192,19 +331,35 @@ namespace CsLox
             throw Error(Peek(), "Expected ')' after expression");
         }
 
-        private Token Consume(TokenType type, string message)
+        private Stmt PrintStatement()
         {
-            if (Check(type)) return Advance();
-
-            throw Error(Peek(), message);
+            Expr value = Expression();
+            Consume(SEMICOLON, "Expected ';' after value.");
+            return new Stmt.Print(value);
         }
 
-        private ParseError Error(Token token, string message)
+        private Stmt ReturnStatement()
         {
-            Lox.Error(token, message);
-            return new ParseError();
+            Token keyword = Previous();
+            Expr value = null;
+            if (!Check(SEMICOLON)) value = Expression();
+
+            Consume(SEMICOLON, "Expect ';' after return value");
+            return new Stmt.Return(keyword, value);
         }
 
+        [SuppressMessage("ReSharper", "ConvertIfStatementToReturnStatement")]
+        private Stmt Statement()
+        {
+            if (Match(FOR)) return ForStatement();
+            if (Match(IF)) return IfStatement();
+            if (Match(PRINT)) return PrintStatement();
+            if (Match(RETURN)) return ReturnStatement();
+            if (Match(WHILE)) return WhileStatement();
+            if (Match(LEFT_BRACE)) return new Stmt.Block(Block());
+
+            return ExpressionStatement();
+        }
         private void Synchronize()
         {
             Advance();
@@ -213,6 +368,7 @@ namespace CsLox
             {
                 if (Previous().Type == SEMICOLON) return;
 
+                // ReSharper disable once SwitchStatementMissingSomeCases
                 switch (Peek().Type)
                 {
                     case CLASS:
@@ -230,44 +386,36 @@ namespace CsLox
             }
         }
 
-        private bool Match(params TokenType[] types)
+        private Expr Unary()
         {
-            foreach (TokenType type in types)
-            {
-                if (Check(type))
-                {
-                    Advance();
-                    return true;
-                }
-            }
-            return false;
+            if (!Match(BANG, MINUS)) return Call();
+            Token op = Previous();
+            Expr right = Unary();
+            return new Expr.Unary(op, right);
+        }
+        private Stmt VarDeclaration()
+        {
+            Token name = Consume(IDENTIFIER, "Expect variable name.");
+
+            Expr initializer = null;
+            if (Match(EQUAL)) initializer = Expression();
+
+            Consume(SEMICOLON, "Expect ';' after variable initialization.");
+            return new Stmt.Var(name, initializer);
         }
 
-        private bool Check(TokenType type)
+        private Stmt WhileStatement()
         {
-            if (IsAtEnd()) return false;
-            return Peek().Type == type;
+            Consume(LEFT_PAREN, "Expect '(' after 'while'.");
+            Expr condition = Expression();
+            Consume(RIGHT_PAREN, "Expect ')' after condition.");
+            Stmt body = Statement();
+
+            return new Stmt.While(condition, body);
         }
 
-        private Token Advance()
+        private class ParseError : SystemException
         {
-            if (!IsAtEnd()) current++;
-            return Previous();
-        }
-
-        private bool IsAtEnd()
-        {
-            return Peek().Type == EOF;
-        }
-
-        private Token Peek()
-        {
-            return tokens[current];
-        }
-
-        private Token Previous()
-        {
-            return tokens[current - 1];
         }
     }
 }

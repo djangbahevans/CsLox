@@ -5,19 +5,23 @@ using System.Collections.Generic;
 
 namespace CsLox
 {
-    abstract class Stmt
+    internal abstract class Stmt
     {
         public interface IVisitor<T>
         {
             T VisitBlockStmt(Block stmt);
             T VisitExpressionStmt(Expression stmt);
+            T VisitFunctionStmt(Function stmt);
+            T VisitIfStmt(If stmt);
             T VisitPrintStmt(Print stmt);
             T VisitVarStmt(Var stmt);
+            T VisitReturnStmt(Return stmt);
+            T VisitWhileStmt(While stmt);
         }
 
         public class Block : Stmt
         {
-            public Block(List<Stmt> statements)
+            public Block(IEnumerable<Stmt> statements)
             {
                 this.statements = statements;
             }
@@ -27,7 +31,7 @@ namespace CsLox
                 return visitor.VisitBlockStmt(this);
             }
 
-            public readonly List<Stmt> statements;
+            public IEnumerable<Stmt> statements { get; }
         }
 
         public class Expression : Stmt
@@ -42,7 +46,45 @@ namespace CsLox
                 return visitor.VisitExpressionStmt(this);
             }
 
-            public readonly Expr expression;
+            public Expr expression { get; }
+        }
+
+        public class Function : Stmt
+        {
+            public Function(Token name, List<Token> parameters, List<Stmt> body)
+            {
+                this.name = name;
+                this.parameters = parameters;
+                this.body = body;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.VisitFunctionStmt(this);
+            }
+
+            public Token name { get; }
+            public List<Token> parameters { get; }
+            public List<Stmt> body { get; }
+        }
+
+        public class If : Stmt
+        {
+            public If(Expr condition, Stmt thenBranch, Stmt elseBranch)
+            {
+                this.condition = condition;
+                this.thenBranch = thenBranch;
+                this.elseBranch = elseBranch;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.VisitIfStmt(this);
+            }
+
+            public Expr condition { get; }
+            public Stmt thenBranch { get; }
+            public Stmt elseBranch { get; }
         }
 
         public class Print : Stmt
@@ -57,7 +99,7 @@ namespace CsLox
                 return visitor.VisitPrintStmt(this);
             }
 
-            public readonly Expr expression;
+            public Expr expression { get; }
         }
 
         public class Var : Stmt
@@ -73,8 +115,42 @@ namespace CsLox
                 return visitor.VisitVarStmt(this);
             }
 
-            public readonly Token name;
-            public readonly Expr initializer;
+            public Token name { get; }
+            public Expr initializer { get; }
+        }
+
+        public class Return : Stmt
+        {
+            public Return(Token keyword, Expr value)
+            {
+                this.keyword = keyword;
+                this.value = value;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.VisitReturnStmt(this);
+            }
+
+            public Token keyword { get; }
+            public Expr value { get; }
+        }
+
+        public class While : Stmt
+        {
+            public While(Expr condition, Stmt body)
+            {
+                this.condition = condition;
+                this.body = body;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.VisitWhileStmt(this);
+            }
+
+            public Expr condition { get; }
+            public Stmt body { get; }
         }
 
         public abstract T Accept<T>(IVisitor<T> visitor);

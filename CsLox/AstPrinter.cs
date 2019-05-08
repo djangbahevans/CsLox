@@ -2,7 +2,7 @@
 
 namespace CsLox
 {
-    class AstPrinter : Expr.IVisitor<string>
+    internal class AstPrinter : Expr.IVisitor<string>
     {
         public string Print(Expr expr) => expr.Accept(this);
 
@@ -11,20 +11,29 @@ namespace CsLox
             throw new System.NotImplementedException();
         }
 
-        public string VisitBinaryExpr(Expr.Binary expr) => Parethesize(expr.op.Lexeme, expr.left, expr.right);
+        public string VisitBinaryExpr(Expr.Binary expr) => Parenthesize(expr.op.Lexeme, expr.left, expr.right);
+        public string VisitCallExpr(Expr.Call expr)
+        {
+            throw new System.NotImplementedException();
+        }
 
-        public string VisitGroupingExpr(Expr.Grouping expr) => Parethesize("group", expr.expression);
+        public string VisitGroupingExpr(Expr.Grouping expr) => Parenthesize("group", expr.expression);
 
         public string VisitLiteralExpr(Expr.Literal expr) => (expr.value == null) ? "null" : expr.value.ToString();
 
-        public string VisitUnaryExpr(Expr.Unary expr) => Parethesize(expr.op.Lexeme, expr.right);
+        public string VisitLogicalExpr(Expr.Logical expr)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public string VisitUnaryExpr(Expr.Unary expr) => Parenthesize(expr.op.Lexeme, expr.right);
 
         public string VisitVariableExpr(Expr.Variable expr)
         {
             throw new System.NotImplementedException();
         }
 
-        private string Parethesize(string name, params Expr[] exprs)
+        private string Parenthesize(string name, params Expr[] exprs)
         {
             StringBuilder builder = new StringBuilder();
 

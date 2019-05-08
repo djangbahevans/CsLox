@@ -1,48 +1,44 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace CsLox
 {
-    class Environment
+    internal class Environment
     {
-        private readonly Dictionary<string, object> values = new Dictionary<string, object>();
-        readonly Environment enclosing;
-
+        private readonly Environment _enclosing;
+        private readonly Dictionary<string, object> _values = new Dictionary<string, object>();
         public Environment()
         {
-            enclosing = null;
+            _enclosing = null;
         }
 
         public Environment(Environment enclosing)
         {
-            this.enclosing = enclosing;
+            this._enclosing = enclosing;
         }
 
         public void Define(string name, object value)
         {
-            values.Add(name, value);
+            _values.Add(name, value);
         }
 
         public object Get(Token name)
         {
-            if (values.ContainsKey(name.Lexeme)) return values[name.Lexeme];
-            if (enclosing != null) return enclosing.Get(name);
+            if (_values.ContainsKey(name.Lexeme)) return _values[name.Lexeme];
+            if (_enclosing != null) return _enclosing.Get(name);
             throw new RuntimeError(name, $"Undefined variable '{name.Lexeme}'");
         }
 
         internal void Assign(Token name, object value)
         {
-            if (values.ContainsKey(name.Lexeme))
+            if (_values.ContainsKey(name.Lexeme))
             {
-                values.Add(name.Lexeme, value);
+                _values[name.Lexeme] = value;
                 return;
             }
-            if (enclosing != null)
-            {
-                enclosing.Assign(name, value);
-                return;
-            }
-            throw new RuntimeError(name, $"Undefined variable '{name.Lexeme}'.");
+
+            if (_enclosing == null) throw new RuntimeError(name, $"Undefined variable '{name.Lexeme}'.");
+            _enclosing.Assign(name, value);
+            return;
         }
     }
 }

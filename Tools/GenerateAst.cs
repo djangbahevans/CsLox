@@ -4,35 +4,41 @@ using System.IO;
 
 namespace Tools
 {
-    class GenerateAst
+    public class GenerateAst
     {
-        static void Main(string[] args)
+        public static void Main(string[] args)
         {
             if (args.Length != 1)
             {
                 Console.Error.WriteLine("Usage: generate_ast <output_directory>");
                 Environment.Exit(1);
             }
-            String outputDir = args[0];
-            defineAst(outputDir, "Expr", new List<string>(new string[]
+            string outputDir = args[0];
+            DefineAst(outputDir, "Expr", new List<string>(new string[]
             {
                 "Assign   : Token name, Expr value",
                 "Binary   : Expr left, Token op, Expr right",
+                "Call     : Expr callee, Token Paren, IEnumerable<Expr> arguments",
                 "Grouping : Expr expression",
                 "Literal  : object value",
+                "Logical  : Expr left, Token op, Expr right",
                 "Unary    : Token op, Expr right",
                 "Variable : Token name"
             }));
-            defineAst(outputDir, "Stmt", new List<string>(new string[]
+            DefineAst(outputDir, "Stmt", new List<string>(new string[]
             {
-                "Block      : List<Stmt> statements",
+                "Block      : IEnumerable<Stmt> statements",
                 "Expression : Expr expression",
+                "Function   : Token name, List<Token> parameters, List<Stmt> body",
+                "If         : Expr condition, Stmt thenBranch, Stmt elseBranch",
                 "Print      : Expr expression",
-                "Var        : Token name, Expr initializer"
+                "Var        : Token name, Expr initializer",
+                "Return     : Token keyword, Expr value",
+                "While      : Expr condition, Stmt body"
             }));
         }
 
-        private static void defineAst(string outputDir, string baseName, List<string> types)
+        private static void DefineAst(string outputDir, string baseName, IReadOnlyCollection<string> types)
         {
             string path = $"{outputDir}{baseName}.cs";
             //Stream stream = File.Create(path);
@@ -45,7 +51,7 @@ namespace Tools
                 writer.WriteLine();
                 writer.WriteLine("namespace CsLox");
                 writer.WriteLine("{");
-                writer.WriteLine($"    abstract class {baseName}");
+                writer.WriteLine($"    internal abstract class {baseName}");
                 writer.WriteLine("    {");
 
                 DefineVisitor(writer, baseName, types);
@@ -67,7 +73,7 @@ namespace Tools
             }
         }
 
-        private static void DefineType(StreamWriter writer, string baseName, string className, string fieldList)
+        private static void DefineType(TextWriter writer, string baseName, string className, string fieldList)
         {
             writer.WriteLine($"        public class {className} : { baseName}");
             writer.WriteLine("        {");
@@ -77,11 +83,11 @@ namespace Tools
             writer.WriteLine("            {");
 
             // Store parameters in fields
-            String[] fields = fieldList.Split(", ");
-            foreach (String field in fields)
+            string[] fields = fieldList.Split(", ");
+            foreach (string field in fields)
             {
-                String name = field.Split(" ")[1];
-                writer.WriteLine($"                this.{ name} = { name};");
+                string name = field.Split(" ")[1];
+                writer.WriteLine($"                this.{name} = { name};");
             }
 
             writer.WriteLine("            }");
@@ -95,15 +101,15 @@ namespace Tools
 
             // Fields
             writer.WriteLine();
-            foreach (String field in fields)
+            foreach (string field in fields)
             {
-                writer.WriteLine($"            public readonly {field};");
+                writer.WriteLine($"            public {field} {{ get; }}");
             }
 
             //writer.WriteLine("  }");
         }
 
-        private static void DefineVisitor(StreamWriter writer, string baseName, List<string> types)
+        private static void DefineVisitor(TextWriter writer, string baseName, IEnumerable<string> types)
         {
             writer.WriteLine("        public interface IVisitor<T>");
             writer.WriteLine("        {");

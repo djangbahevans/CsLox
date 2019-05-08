@@ -1,13 +1,13 @@
 ﻿namespace CsLox
 {
-    class Token
+    internal class Token
     {
         public Token(TokenType type, string lexeme, object literal, int line)
         {
-            this.Type = type;
-            this.Lexeme = lexeme;
-            this.Literal = literal;
-            this.Line = line;
+            Type = type;
+            Lexeme = lexeme;
+            Literal = literal;
+            Line = line;
         }
 
         public int Line { get; }

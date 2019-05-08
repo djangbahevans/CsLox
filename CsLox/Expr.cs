@@ -5,14 +5,16 @@ using System.Collections.Generic;
 
 namespace CsLox
 {
-    abstract class Expr
+    internal abstract class Expr
     {
         public interface IVisitor<T>
         {
             T VisitAssignExpr(Assign expr);
             T VisitBinaryExpr(Binary expr);
+            T VisitCallExpr(Call expr);
             T VisitGroupingExpr(Grouping expr);
             T VisitLiteralExpr(Literal expr);
+            T VisitLogicalExpr(Logical expr);
             T VisitUnaryExpr(Unary expr);
             T VisitVariableExpr(Variable expr);
         }
@@ -30,8 +32,8 @@ namespace CsLox
                 return visitor.VisitAssignExpr(this);
             }
 
-            public readonly Token name;
-            public readonly Expr value;
+            public Token name { get; }
+            public Expr value { get; }
         }
 
         public class Binary : Expr
@@ -48,9 +50,28 @@ namespace CsLox
                 return visitor.VisitBinaryExpr(this);
             }
 
-            public readonly Expr left;
-            public readonly Token op;
-            public readonly Expr right;
+            public Expr left { get; }
+            public Token op { get; }
+            public Expr right { get; }
+        }
+
+        public class Call : Expr
+        {
+            public Call(Expr callee, Token Paren, IEnumerable<Expr> arguments)
+            {
+                this.callee = callee;
+                this.Paren = Paren;
+                this.arguments = arguments;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.VisitCallExpr(this);
+            }
+
+            public Expr callee { get; }
+            public Token Paren { get; }
+            public IEnumerable<Expr> arguments { get; }
         }
 
         public class Grouping : Expr
@@ -65,7 +86,7 @@ namespace CsLox
                 return visitor.VisitGroupingExpr(this);
             }
 
-            public readonly Expr expression;
+            public Expr expression { get; }
         }
 
         public class Literal : Expr
@@ -80,7 +101,26 @@ namespace CsLox
                 return visitor.VisitLiteralExpr(this);
             }
 
-            public readonly object value;
+            public object value { get; }
+        }
+
+        public class Logical : Expr
+        {
+            public Logical(Expr left, Token op, Expr right)
+            {
+                this.left = left;
+                this.op = op;
+                this.right = right;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.VisitLogicalExpr(this);
+            }
+
+            public Expr left { get; }
+            public Token op { get; }
+            public Expr right { get; }
         }
 
         public class Unary : Expr
@@ -96,8 +136,8 @@ namespace CsLox
                 return visitor.VisitUnaryExpr(this);
             }
 
-            public readonly Token op;
-            public readonly Expr right;
+            public Token op { get; }
+            public Expr right { get; }
         }
 
         public class Variable : Expr
@@ -112,7 +152,7 @@ namespace CsLox
                 return visitor.VisitVariableExpr(this);
             }
 
-            public readonly Token name;
+            public Token name { get; }
         }
 
         public abstract T Accept<T>(IVisitor<T> visitor);
