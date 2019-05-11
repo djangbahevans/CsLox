@@ -23,8 +23,8 @@ namespace CsLox
         {
             public Assign(Token name, Expr value)
             {
-                this.name = name;
-                this.value = value;
+                this.Name = name;
+                this.Value = value;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
@@ -32,17 +32,17 @@ namespace CsLox
                 return visitor.VisitAssignExpr(this);
             }
 
-            public Token name { get; }
-            public Expr value { get; }
+            public Token Name { get; }
+            public Expr Value { get; }
         }
 
         public class Binary : Expr
         {
             public Binary(Expr left, Token op, Expr right)
             {
-                this.left = left;
-                this.op = op;
-                this.right = right;
+                this.Left = left;
+                this.Op = op;
+                this.Right = right;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
@@ -50,18 +50,18 @@ namespace CsLox
                 return visitor.VisitBinaryExpr(this);
             }
 
-            public Expr left { get; }
-            public Token op { get; }
-            public Expr right { get; }
+            public Expr Left { get; }
+            public Token Op { get; }
+            public Expr Right { get; }
         }
 
         public class Call : Expr
         {
-            public Call(Expr callee, Token Paren, IEnumerable<Expr> arguments)
+            public Call(Expr callee, Token paren, IEnumerable<Expr> arguments)
             {
-                this.callee = callee;
-                this.Paren = Paren;
-                this.arguments = arguments;
+                this.Callee = callee;
+                this.Paren = paren;
+                this.Arguments = arguments;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
@@ -69,16 +69,16 @@ namespace CsLox
                 return visitor.VisitCallExpr(this);
             }
 
-            public Expr callee { get; }
+            public Expr Callee { get; }
             public Token Paren { get; }
-            public IEnumerable<Expr> arguments { get; }
+            public IEnumerable<Expr> Arguments { get; }
         }
 
         public class Grouping : Expr
         {
             public Grouping(Expr expression)
             {
-                this.expression = expression;
+                this.Expression = expression;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
@@ -86,14 +86,14 @@ namespace CsLox
                 return visitor.VisitGroupingExpr(this);
             }
 
-            public Expr expression { get; }
+            public Expr Expression { get; }
         }
 
         public class Literal : Expr
         {
             public Literal(object value)
             {
-                this.value = value;
+                this.Value = value;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
@@ -101,16 +101,16 @@ namespace CsLox
                 return visitor.VisitLiteralExpr(this);
             }
 
-            public object value { get; }
+            public Object Value { get; }
         }
 
         public class Logical : Expr
         {
             public Logical(Expr left, Token op, Expr right)
             {
-                this.left = left;
-                this.op = op;
-                this.right = right;
+                this.Left = left;
+                this.Op = op;
+                this.Right = right;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
@@ -118,17 +118,17 @@ namespace CsLox
                 return visitor.VisitLogicalExpr(this);
             }
 
-            public Expr left { get; }
-            public Token op { get; }
-            public Expr right { get; }
+            public Expr Left { get; }
+            public Token Op { get; }
+            public Expr Right { get; }
         }
 
         public class Unary : Expr
         {
             public Unary(Token op, Expr right)
             {
-                this.op = op;
-                this.right = right;
+                this.Op = op;
+                this.Right = right;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
@@ -136,15 +136,15 @@ namespace CsLox
                 return visitor.VisitUnaryExpr(this);
             }
 
-            public Token op { get; }
-            public Expr right { get; }
+            public Token Op { get; }
+            public Expr Right { get; }
         }
 
         public class Variable : Expr
         {
             public Variable(Token name)
             {
-                this.name = name;
+                this.Name = name;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
@@ -152,7 +152,7 @@ namespace CsLox
                 return visitor.VisitVariableExpr(this);
             }
 
-            public Token name { get; }
+            public Token Name { get; }
         }
 
         public abstract T Accept<T>(IVisitor<T> visitor);

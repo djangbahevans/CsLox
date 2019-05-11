@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Text;
+using System.Text.RegularExpressions;
 
 namespace Tools
 {
@@ -18,7 +20,7 @@ namespace Tools
             {
                 "Assign   : Token name, Expr value",
                 "Binary   : Expr left, Token op, Expr right",
-                "Call     : Expr callee, Token Paren, IEnumerable<Expr> arguments",
+                "Call     : Expr callee, Token paren, IEnumerable<Expr> arguments",
                 "Grouping : Expr expression",
                 "Literal  : object value",
                 "Logical  : Expr left, Token op, Expr right",
@@ -28,7 +30,7 @@ namespace Tools
             DefineAst(outputDir, "Stmt", new List<string>(new string[]
             {
                 "Block      : IEnumerable<Stmt> statements",
-                "Expression : Expr expression",
+                "Expression : Expr expression_",
                 "Function   : Token name, List<Token> parameters, List<Stmt> body",
                 "If         : Expr condition, Stmt thenBranch, Stmt elseBranch",
                 "Print      : Expr expression",
@@ -87,7 +89,7 @@ namespace Tools
             foreach (string field in fields)
             {
                 string name = field.Split(" ")[1];
-                writer.WriteLine($"                this.{name} = { name};");
+                writer.WriteLine($"                this.{CapitalizeWord(name)} = { name};");
             }
 
             writer.WriteLine("            }");
@@ -103,7 +105,7 @@ namespace Tools
             writer.WriteLine();
             foreach (string field in fields)
             {
-                writer.WriteLine($"            public {field} {{ get; }}");
+                writer.WriteLine($"            public {CapitalizeWord(field)} {{ get; }}");
             }
 
             //writer.WriteLine("  }");
@@ -120,6 +122,11 @@ namespace Tools
             }
 
             writer.WriteLine("        }");
+        }
+
+        private static string CapitalizeWord(string str)
+        {
+            return Regex.Replace(str, @"(?(\s\w)\s\w|(^\w))", c => c.Value.ToUpper());
         }
     }
 }

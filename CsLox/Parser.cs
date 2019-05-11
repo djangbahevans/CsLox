@@ -8,8 +8,14 @@ namespace CsLox
 {
     internal class Parser
     {
+        /// <summary>
+        /// Tokens to parse.
+        /// </summary>
         private readonly List<Token> _tokens;
 
+        /// <summary>
+        /// Current token being parsed.
+        /// </summary>
         private int _current = 0;
 
         public Parser(List<Token> tokens)
@@ -17,9 +23,16 @@ namespace CsLox
             this._tokens = tokens;
         }
 
+        /// <summary>
+        /// Parses functions and methods
+        /// </summary>
+        /// <param name="kind"></param>
+        /// <returns>A new function statement</returns>
         private Stmt.Function Function(string kind)
         {
-            Token name = Consume(IDENTIFIER, $"Expect {kind} name.");
+            Token name = null;
+            if (Check(IDENTIFIER))
+                name = Consume(IDENTIFIER, $"Expect {kind} name.");
             Consume(LEFT_PAREN, $"Expected '(' after {kind}");
             List<Token> parameters = new List<Token>();
             if (!Check(RIGHT_PAREN))
@@ -109,7 +122,7 @@ namespace CsLox
 
             if (expr is Expr.Variable variable)
             {
-                Token name = variable.name;
+                Token name = variable.Name;
                 return new Expr.Assign(name, value);
             }
 
@@ -129,6 +142,7 @@ namespace CsLox
 
         private Expr Call()
         {
+
             Expr expr = Primary();
 
             while (true)
@@ -140,6 +154,11 @@ namespace CsLox
             return expr;
         }
 
+        /// <summary>
+        /// Checks if current token is equal to input TokenType
+        /// </summary>
+        /// <param name="type">TokenType to compare</param>
+        /// <returns></returns>
         private bool Check(TokenType type)
         {
             if (IsAtEnd()) return false;
@@ -211,6 +230,8 @@ namespace CsLox
                 do
                 {
                     if (arguments.Count >= 8) Error(Peek(), "Cannot have more than 8 arguments");
+                    //if (Match(FUN)) arguments.Add(Function("function"));
+                    //else arguments.Add(Expression());
                     arguments.Add(Expression());
                 } while (Match(COMMA));
             }
@@ -386,6 +407,10 @@ namespace CsLox
             }
         }
 
+        /// <summary>
+        /// Parses Unary operations
+        /// </summary>
+        /// <returns></returns>
         private Expr Unary()
         {
             if (!Match(BANG, MINUS)) return Call();
@@ -393,6 +418,11 @@ namespace CsLox
             Expr right = Unary();
             return new Expr.Unary(op, right);
         }
+
+        /// <summary>
+        /// Parses var declarations
+        /// </summary>
+        /// <returns></returns>
         private Stmt VarDeclaration()
         {
             Token name = Consume(IDENTIFIER, "Expect variable name.");
@@ -404,6 +434,10 @@ namespace CsLox
             return new Stmt.Var(name, initializer);
         }
 
+        /// <summary>
+        /// Parses 'while' statements
+        /// </summary>
+        /// <returns></returns>
         private Stmt WhileStatement()
         {
             Consume(LEFT_PAREN, "Expect '(' after 'while'.");

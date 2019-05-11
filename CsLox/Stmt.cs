@@ -23,7 +23,7 @@ namespace CsLox
         {
             public Block(IEnumerable<Stmt> statements)
             {
-                this.statements = statements;
+                this.Statements = statements;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
@@ -31,14 +31,14 @@ namespace CsLox
                 return visitor.VisitBlockStmt(this);
             }
 
-            public IEnumerable<Stmt> statements { get; }
+            public IEnumerable<Stmt> Statements { get; }
         }
 
         public class Expression : Stmt
         {
-            public Expression(Expr expression)
+            public Expression(Expr expression_)
             {
-                this.expression = expression;
+                this.Expression_ = expression_;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
@@ -46,16 +46,16 @@ namespace CsLox
                 return visitor.VisitExpressionStmt(this);
             }
 
-            public Expr expression { get; }
+            public Expr Expression_ { get; }
         }
 
         public class Function : Stmt
         {
             public Function(Token name, List<Token> parameters, List<Stmt> body)
             {
-                this.name = name;
-                this.parameters = parameters;
-                this.body = body;
+                this.Name = name;
+                this.Parameters = parameters;
+                this.Body = body;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
@@ -63,18 +63,18 @@ namespace CsLox
                 return visitor.VisitFunctionStmt(this);
             }
 
-            public Token name { get; }
-            public List<Token> parameters { get; }
-            public List<Stmt> body { get; }
+            public Token Name { get; }
+            public List<Token> Parameters { get; }
+            public List<Stmt> Body { get; }
         }
 
         public class If : Stmt
         {
             public If(Expr condition, Stmt thenBranch, Stmt elseBranch)
             {
-                this.condition = condition;
-                this.thenBranch = thenBranch;
-                this.elseBranch = elseBranch;
+                this.Condition = condition;
+                this.ThenBranch = thenBranch;
+                this.ElseBranch = elseBranch;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
@@ -82,16 +82,16 @@ namespace CsLox
                 return visitor.VisitIfStmt(this);
             }
 
-            public Expr condition { get; }
-            public Stmt thenBranch { get; }
-            public Stmt elseBranch { get; }
+            public Expr Condition { get; }
+            public Stmt ThenBranch { get; }
+            public Stmt ElseBranch { get; }
         }
 
         public class Print : Stmt
         {
             public Print(Expr expression)
             {
-                this.expression = expression;
+                this.Expression = expression;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
@@ -99,15 +99,15 @@ namespace CsLox
                 return visitor.VisitPrintStmt(this);
             }
 
-            public Expr expression { get; }
+            public Expr Expression { get; }
         }
 
         public class Var : Stmt
         {
             public Var(Token name, Expr initializer)
             {
-                this.name = name;
-                this.initializer = initializer;
+                this.Name = name;
+                this.Initializer = initializer;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
@@ -115,16 +115,16 @@ namespace CsLox
                 return visitor.VisitVarStmt(this);
             }
 
-            public Token name { get; }
-            public Expr initializer { get; }
+            public Token Name { get; }
+            public Expr Initializer { get; }
         }
 
         public class Return : Stmt
         {
             public Return(Token keyword, Expr value)
             {
-                this.keyword = keyword;
-                this.value = value;
+                this.Keyword = keyword;
+                this.Value = value;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
@@ -132,16 +132,16 @@ namespace CsLox
                 return visitor.VisitReturnStmt(this);
             }
 
-            public Token keyword { get; }
-            public Expr value { get; }
+            public Token Keyword { get; }
+            public Expr Value { get; }
         }
 
         public class While : Stmt
         {
             public While(Expr condition, Stmt body)
             {
-                this.condition = condition;
-                this.body = body;
+                this.Condition = condition;
+                this.Body = body;
             }
 
             public override T Accept<T>(IVisitor<T> visitor)
@@ -149,8 +149,8 @@ namespace CsLox
                 return visitor.VisitWhileStmt(this);
             }
 
-            public Expr condition { get; }
-            public Stmt body { get; }
+            public Expr Condition { get; }
+            public Stmt Body { get; }
         }
 
         public abstract T Accept<T>(IVisitor<T> visitor);

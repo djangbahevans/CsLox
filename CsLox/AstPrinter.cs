@@ -11,22 +11,22 @@ namespace CsLox
             throw new System.NotImplementedException();
         }
 
-        public string VisitBinaryExpr(Expr.Binary expr) => Parenthesize(expr.op.Lexeme, expr.left, expr.right);
+        public string VisitBinaryExpr(Expr.Binary expr) => Parenthesize(expr.Op.Lexeme, expr.Left, expr.Right);
         public string VisitCallExpr(Expr.Call expr)
         {
             throw new System.NotImplementedException();
         }
 
-        public string VisitGroupingExpr(Expr.Grouping expr) => Parenthesize("group", expr.expression);
+        public string VisitGroupingExpr(Expr.Grouping expr) => Parenthesize("group", expr.Expression);
 
-        public string VisitLiteralExpr(Expr.Literal expr) => (expr.value == null) ? "null" : expr.value.ToString();
+        public string VisitLiteralExpr(Expr.Literal expr) => (expr.Value == null) ? "null" : expr.Value.ToString();
 
         public string VisitLogicalExpr(Expr.Logical expr)
         {
             throw new System.NotImplementedException();
         }
 
-        public string VisitUnaryExpr(Expr.Unary expr) => Parenthesize(expr.op.Lexeme, expr.right);
+        public string VisitUnaryExpr(Expr.Unary expr) => Parenthesize(expr.Op.Lexeme, expr.Right);
 
         public string VisitVariableExpr(Expr.Variable expr)
         {

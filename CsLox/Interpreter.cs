@@ -8,6 +8,7 @@ namespace CsLox
     internal class Interpreter : Expr.IVisitor<object>, Stmt.IVisitor<object>
     {
         private Environment _environment = new Environment();
+        private readonly IDictionary<Expr, int?> _locals = new Dictionary<Expr, int?>();
 
         public Interpreter()
         {
@@ -18,46 +19,54 @@ namespace CsLox
 
         public object VisitAssignExpr(Expr.Assign expr)
         {
-            object value = Evaluate(expr.value);
+            object value = Evaluate(expr.Value);
 
-            _environment.Assign(expr.name, value);
+            int? distance = _locals[expr];
+            if (distance != null)
+            {
+                _environment.AssignAt((int)distance, expr.Name, value);
+            }
+            else
+            {
+                Globals.Assign(expr.Name, value);
+            }
             return value;
         }
 
         public object VisitBinaryExpr(Expr.Binary expr)
         {
-            object left = Evaluate(expr.left);
-            object right = Evaluate(expr.right);
+            object left = Evaluate(expr.Left);
+            object right = Evaluate(expr.Right);
 
             // ReSharper disable once SwitchStatementMissingSomeCases
-            switch (expr.op.Type)
+            switch (expr.Op.Type)
             {
                 case GREATER:
-                    CheckNumberOperand(expr.op, left, right);
+                    CheckNumberOperand(expr.Op, left, right);
                     return (double)left > (double)right;
                 case GREATER_EQUAL:
-                    CheckNumberOperand(expr.op, left, right);
+                    CheckNumberOperand(expr.Op, left, right);
                     return (double)left >= (double)right;
                 case LESS:
-                    CheckNumberOperand(expr.op, left, right);
+                    CheckNumberOperand(expr.Op, left, right);
                     return (double)left < (double)right;
                 case LESS_EQUAL:
-                    CheckNumberOperand(expr.op, left, right);
+                    CheckNumberOperand(expr.Op, left, right);
                     return (double)left <= (double)right;
                 case BANG_EQUAL:
                     return !IsEqual(left, right);
                 case EQUAL_EQUAL:
                     return IsEqual(left, right);
                 case MINUS:
-                    CheckNumberOperand(expr.op, left, right);
+                    CheckNumberOperand(expr.Op, left, right);
                     return (double)left - (double)right;
                 case SLASH:
-                    CheckNumberOperand(expr.op, left, right);
+                    CheckNumberOperand(expr.Op, left, right);
                     // ReSharper disable once CompareOfFloatsByEqualityOperator
-                    if ((double)right == 0) throw new RuntimeError(expr.op, "Cannot divide by zero.");
+                    if ((double)right == 0) throw new RuntimeError(expr.Op, "Cannot divide by zero.");
                     return (double)left / (double)right;
                 case STAR:
-                    CheckNumberOperand(expr.op, left, right);
+                    CheckNumberOperand(expr.Op, left, right);
                     return (double)left * (double)right;
                 case PLUS:
                     if (left is double d && right is double d1)
@@ -65,7 +74,7 @@ namespace CsLox
                     if (left is string || right is string)
                         return left.ToString() + right;
 
-                    throw new RuntimeError(expr.op, "Operands must be two numbers or two strings.");
+                    throw new RuntimeError(expr.Op, "Operands must be two numbers or two strings.");
             }
 
             return null;
@@ -73,15 +82,15 @@ namespace CsLox
 
         public object VisitBlockStmt(Stmt.Block stmt)
         {
-            ExecuteBlock(stmt.statements, new Environment(_environment));
+            ExecuteBlock(stmt.Statements, new Environment(_environment));
             return null;
         }
 
         public object VisitCallExpr(Expr.Call expr)
         {
-            object callee = Evaluate(expr.callee);
+            object callee = Evaluate(expr.Callee);
 
-            List<object> arguments = expr.arguments.Select(Evaluate).ToList();
+            List<object> arguments = expr.Arguments.Select(Evaluate).ToList();
 
             if (!(callee is ILoxCallable)) throw new RuntimeError(expr.Paren, "Can only call functions and classes.");
 
@@ -95,45 +104,46 @@ namespace CsLox
 
         object Stmt.IVisitor<object>.VisitExpressionStmt(Stmt.Expression stmt)
         {
-            Evaluate(stmt.expression);
+            Evaluate(stmt.Expression_);
             return null;
         }
 
         public object VisitFunctionStmt(Stmt.Function stmt)
         {
             LoxFunction function = new LoxFunction(stmt, _environment);
-            _environment.Define(stmt.name.Lexeme, function);
+            if (stmt.Name != null)
+                _environment.Define(stmt.Name.Lexeme, function);
             return null;
         }
 
         public object VisitGroupingExpr(Expr.Grouping expr)
         {
-            return Evaluate(expr.expression);
+            return Evaluate(expr.Expression);
         }
 
         public object VisitIfStmt(Stmt.If stmt)
         {
-            if (IsTruthy(Evaluate(stmt.condition)))
+            if (IsTruthy(Evaluate(stmt.Condition)))
             {
-                Execute(stmt.thenBranch);
+                Execute(stmt.ThenBranch);
             }
-            else if (stmt.elseBranch != null)
+            else if (stmt.ElseBranch != null)
             {
-                Execute(stmt.elseBranch);
+                Execute(stmt.ElseBranch);
             }
             return null;
         }
 
         public object VisitLiteralExpr(Expr.Literal expr)
         {
-            return expr.value;
+            return expr.Value;
         }
 
         public object VisitLogicalExpr(Expr.Logical expr)
         {
-            object left = Evaluate(expr.left);
+            object left = Evaluate(expr.Left);
 
-            if (expr.op.Type == OR)
+            if (expr.Op.Type == OR)
             {
                 if (IsTruthy(left)) return left;
             }
@@ -142,12 +152,12 @@ namespace CsLox
                 if (!IsTruthy(left)) return left;
             }
 
-            return Evaluate(expr.right);
+            return Evaluate(expr.Right);
         }
 
         public object VisitPrintStmt(Stmt.Print stmt)
         {
-            object value = Evaluate(stmt.expression);
+            object value = Evaluate(stmt.Expression);
             Console.WriteLine(Stringify(value));
             return null;
         }
@@ -155,20 +165,20 @@ namespace CsLox
         public object VisitReturnStmt(Stmt.Return stmt)
         {
             object value = null;
-            if (stmt.value != null) value = Evaluate(stmt.value);
+            if (stmt.Value != null) value = Evaluate(stmt.Value);
 
             throw new Return(value);
         }
 
         public object VisitUnaryExpr(Expr.Unary expr)
         {
-            object right = Evaluate(expr.right);
+            object right = Evaluate(expr.Right);
 
             // ReSharper disable once SwitchStatementMissingSomeCases
-            switch (expr.op.Type)
+            switch (expr.Op.Type)
             {
                 case MINUS:
-                    CheckNumberOperand(expr.op, right);
+                    CheckNumberOperand(expr.Op, right);
                     return -(double)right;
                 case BANG:
                     return !IsTruthy(right);
@@ -179,21 +189,27 @@ namespace CsLox
 
         public object VisitVariableExpr(Expr.Variable expr)
         {
-            return _environment.Get(expr.name);
+            return LookupVariable(expr.Name, expr);
+        }
+
+        private object LookupVariable(Token name, Expr expr)
+        {
+            _locals.TryGetValue(expr, out int? distance);
+            return distance != null ? _environment.GetAt((int)distance, name.Lexeme) : Globals.Get(name);
         }
 
         public object VisitVarStmt(Stmt.Var stmt)
         {
             object value = null;
-            if (stmt.initializer != null) value = Evaluate(stmt.initializer);
-            _environment.Define(stmt.name.Lexeme, value);
+            if (stmt.Initializer != null) value = Evaluate(stmt.Initializer);
+            _environment.Define(stmt.Name.Lexeme, value);
             return null;
         }
         public object VisitWhileStmt(Stmt.While stmt)
         {
-            while (IsTruthy(Evaluate(stmt.condition)))
+            while (IsTruthy(Evaluate(stmt.Condition)))
             {
-                Execute(stmt.body);
+                Execute(stmt.Body);
             }
             return null;
         }
@@ -306,6 +322,11 @@ namespace CsLox
                 (double)System.Environment.TickCount / 1000;
 
             public override string ToString() => "<native fun>";
+        }
+
+        public void Resolve(Expr expr, int depth)
+        {
+            _locals.Add(expr, depth);
         }
     }
 }

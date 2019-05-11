@@ -14,19 +14,19 @@ namespace CsLox
             _closure = closure;
         }
 
-        public int Arity() => _declaration.parameters.Count();
+        public int Arity() => _declaration.Parameters.Count();
 
         public object Call(Interpreter interpreter, List<object> arguments)
         {
             Environment environment = new Environment(_closure);
-            for (int i = 0; i < _declaration.parameters.Count(); i++)
+            for (int i = 0; i < _declaration.Parameters.Count(); i++)
             {
-                environment.Define(_declaration.parameters[i].Lexeme, arguments[i]);
+                environment.Define(_declaration.Parameters[i].Lexeme, arguments[i]);
             }
 
             try
             {
-                interpreter.ExecuteBlock(_declaration.body, environment);
+                interpreter.ExecuteBlock(_declaration.Body, environment);
             }
             catch (Return returnValue)
             {
@@ -36,6 +36,6 @@ namespace CsLox
             return null;
         }
 
-        public override string ToString() => $"<fn {_declaration.name.Lexeme}>";
+        public override string ToString() => $"<fn {_declaration.Name.Lexeme}>";
     }
 }
