@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 
 namespace CsLox
@@ -8,13 +7,26 @@ namespace CsLox
     {
         private readonly Interpreter _interpreter;
         private readonly Stack<IDictionary<string, bool>> _scopes = new Stack<IDictionary<string, bool>>();
-        private FunctionType currentFunction = FunctionType.NONE;
-
+        private ClassType _currentClass = ClassType.NONE;
+        private FunctionType _currentFunction = FunctionType.NONE;
         public Resolver(Interpreter interpreter)
         {
             _interpreter = interpreter;
         }
 
+        private enum ClassType
+        {
+            NONE,
+            CLASS
+        }
+
+        private enum FunctionType
+        {
+            NONE,
+            FUNCTION,
+            INITIALIZER,
+            METHOD
+        }
         public object VisitAssignExpr(Expr.Assign expr)
         {
             Resolve(expr.Value);
@@ -44,6 +56,30 @@ namespace CsLox
             return null;
         }
 
+        public object VisitClassStmt(Stmt.Class stmt)
+        {
+            ClassType enclosingClass = _currentClass;
+            _currentClass = ClassType.CLASS;
+
+            Declare(stmt.Name);
+            Define(stmt.Name);
+
+            BeginScope();
+            _scopes.Peek().Add("this", true);
+
+            foreach (Stmt.Function method in stmt.Methods)
+            {
+                FunctionType declaration = FunctionType.METHOD;
+                if (method.Name.Lexeme.Equals("init")) declaration = FunctionType.INITIALIZER;
+                ResolveFunction(method, declaration);
+            }
+
+            EndScope();
+
+            _currentClass = enclosingClass;
+            return null;
+        }
+
         public object VisitExpressionStmt(Stmt.Expression stmt)
         {
             Resolve(stmt.Expression_);
@@ -59,6 +95,11 @@ namespace CsLox
             return null;
         }
 
+        public object VisitGetExpr(Expr.Get expr)
+        {
+            Resolve(expr.Object);
+            return null;
+        }
         public object VisitGroupingExpr(Expr.Grouping expr)
         {
             Resolve(expr.Expression);
@@ -93,9 +134,31 @@ namespace CsLox
 
         public object VisitReturnStmt(Stmt.Return stmt)
         {
-            if (currentFunction == FunctionType.NONE)
+            if (_currentFunction == FunctionType.NONE)
                 Lox.Error(stmt.Keyword, "Cannot return from top-level code.");
-            if (stmt.Value != null) Resolve(stmt.Value);
+            if (stmt.Value != null)
+            {
+                if (_currentFunction == FunctionType.INITIALIZER)
+                    Lox.Error(stmt.Keyword, "Cannot return a value from an initializer.");
+                Resolve(stmt.Value);
+            }
+            return null;
+        }
+
+        public object VisitSetExpr(Expr.Set expr)
+        {
+            Resolve(expr.Value);
+            Resolve(expr.Object);
+            return null;
+        }
+
+        public object VisitThisExpr(Expr.This expr)
+        {
+            if (_currentClass == ClassType.NONE)
+            {
+                Lox.Error(expr.Keyword, "Cannot use 'this' outside of a class.");
+            }
+            ResolveLocal(expr, expr.Keyword);
             return null;
         }
 
@@ -107,7 +170,9 @@ namespace CsLox
 
         public object VisitVariableExpr(Expr.Variable expr)
         {
-            _scopes.Peek().TryGetValue(expr.Name.Lexeme, out bool getValue);
+            _scopes.TryPeek(out IDictionary<string, bool> peekedDictionary);
+            bool getValue = false;
+            peekedDictionary?.TryGetValue(expr.Name.Lexeme, out getValue);
             if (_scopes.Count != 0 && getValue == false)
                 Lox.Error(expr.Name, "Cannot read local variable in its own initializer.");
             ResolveLocal(expr, expr.Name);
@@ -155,7 +220,8 @@ namespace CsLox
         private void Define(Token name)
         {
             if (_scopes.Count == 0) return;
-            _scopes.Peek().Add(name.Lexeme, true);
+            _scopes.Peek()[name.Lexeme] = true;
+            //_scopes.Peek().Add(name.Lexeme, true);
         }
 
         private void EndScope()
@@ -174,8 +240,8 @@ namespace CsLox
 
         private void ResolveFunction(Stmt.Function function, FunctionType type)
         {
-            FunctionType enclosingFunction = currentFunction;
-            currentFunction = type;
+            FunctionType enclosingFunction = _currentFunction;
+            _currentFunction = type;
             BeginScope();
             foreach (Token parameter in function.Parameters)
             {
@@ -184,7 +250,7 @@ namespace CsLox
             }
             Resolve(function.Body);
             EndScope();
-            currentFunction = enclosingFunction;
+            _currentFunction = enclosingFunction;
         }
         private void ResolveLocal(Expr expr, Token name)
         {
@@ -194,11 +260,6 @@ namespace CsLox
                 _interpreter.Resolve(expr, _scopes.Count - 1 - i);
                 return;
             }
-        }
-        private enum FunctionType
-        {
-            NONE,
-            FUNCTION
         }
     }
 }

@@ -10,6 +10,7 @@ namespace CsLox
         public interface IVisitor<T>
         {
             T VisitBlockStmt(Block stmt);
+            T VisitClassStmt(Class stmt);
             T VisitExpressionStmt(Expression stmt);
             T VisitFunctionStmt(Function stmt);
             T VisitIfStmt(If stmt);
@@ -32,6 +33,23 @@ namespace CsLox
             }
 
             public IEnumerable<Stmt> Statements { get; }
+        }
+
+        public class Class : Stmt
+        {
+            public Class(Token name, IEnumerable<Stmt.Function> methods)
+            {
+                this.Name = name;
+                this.Methods = methods;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.VisitClassStmt(this);
+            }
+
+            public Token Name { get; }
+            public IEnumerable<Stmt.Function> Methods { get; }
         }
 
         public class Expression : Stmt

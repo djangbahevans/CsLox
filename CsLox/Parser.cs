@@ -120,15 +120,17 @@ namespace CsLox
             Token equals = Previous();
             Expr value = Assignment();
 
-            if (expr is Expr.Variable variable)
+            switch (expr)
             {
-                Token name = variable.Name;
-                return new Expr.Assign(name, value);
+                case Expr.Variable variable:
+                    return new Expr.Assign(variable.Name, value);
+                case Expr.Get get:
+                    return new Expr.Set(get.Object, get.Name, value);
+                default:
+                    Error(@equals, "Invalid assignment target.");
+
+                    return expr;
             }
-
-            Error(@equals, "Invalid assignment target.");
-
-            return expr;
         }
 
         private List<Stmt> Block()
@@ -148,6 +150,11 @@ namespace CsLox
             while (true)
             {
                 if (Match(LEFT_PAREN)) expr = FinishCall(expr);
+                else if (Match(DOT))
+                {
+                    Token name = Consume(IDENTIFIER, "Expect property name after '.'");
+                    expr = new Expr.Get(expr, name);
+                }
                 else break;
             }
 
@@ -163,6 +170,19 @@ namespace CsLox
         {
             if (IsAtEnd()) return false;
             return Peek().Type == type;
+        }
+
+        private Stmt ClassDeclaration()
+        {
+            Token name = Consume(IDENTIFIER, "Expect class name.");
+            Consume(LEFT_BRACE, "Expect '{' before class body.");
+
+            List<Stmt.Function> methods = new List<Stmt.Function>();
+            while (!Check(RIGHT_BRACE) && !IsAtEnd()) methods.Add(Function("method"));
+
+            Consume(RIGHT_BRACE, "Expect '}' after class body");
+
+            return new Stmt.Class(name, methods);
         }
 
         private Expr Comparison()
@@ -190,6 +210,7 @@ namespace CsLox
         {
             try
             {
+                if (Match(CLASS)) return ClassDeclaration();
                 if (Match(FUN)) return Function("function");
                 if (Match(VAR)) return VarDeclaration();
                 return Statement();
@@ -339,6 +360,8 @@ namespace CsLox
             if (Match(NIL)) return new Expr.Literal(null);
 
             if (Match(NUMBER, STRING)) return new Expr.Literal(Previous().Literal);
+
+            if (Match(THIS)) return new Expr.This(Previous());
 
             if (Match(IDENTIFIER)) return new Expr.Variable(Previous());
 

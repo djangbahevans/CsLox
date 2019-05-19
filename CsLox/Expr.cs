@@ -12,9 +12,12 @@ namespace CsLox
             T VisitAssignExpr(Assign expr);
             T VisitBinaryExpr(Binary expr);
             T VisitCallExpr(Call expr);
+            T VisitGetExpr(Get expr);
             T VisitGroupingExpr(Grouping expr);
             T VisitLiteralExpr(Literal expr);
             T VisitLogicalExpr(Logical expr);
+            T VisitSetExpr(Set expr);
+            T VisitThisExpr(This expr);
             T VisitUnaryExpr(Unary expr);
             T VisitVariableExpr(Variable expr);
         }
@@ -38,10 +41,10 @@ namespace CsLox
 
         public class Binary : Expr
         {
-            public Binary(Expr left, Token op, Expr right)
+            public Binary(Expr left, Token @operator, Expr right)
             {
                 this.Left = left;
-                this.Op = op;
+                this.Operator = @operator;
                 this.Right = right;
             }
 
@@ -51,7 +54,7 @@ namespace CsLox
             }
 
             public Expr Left { get; }
-            public Token Op { get; }
+            public Token Operator { get; }
             public Expr Right { get; }
         }
 
@@ -72,6 +75,23 @@ namespace CsLox
             public Expr Callee { get; }
             public Token Paren { get; }
             public IEnumerable<Expr> Arguments { get; }
+        }
+
+        public class Get : Expr
+        {
+            public Get(Expr @object, Token name)
+            {
+                this.Object = @object;
+                this.Name = name;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.VisitGetExpr(this);
+            }
+
+            public Expr Object { get; }
+            public Token Name { get; }
         }
 
         public class Grouping : Expr
@@ -101,15 +121,15 @@ namespace CsLox
                 return visitor.VisitLiteralExpr(this);
             }
 
-            public Object Value { get; }
+            public object Value { get; }
         }
 
         public class Logical : Expr
         {
-            public Logical(Expr left, Token op, Expr right)
+            public Logical(Expr left, Token @operator, Expr right)
             {
                 this.Left = left;
-                this.Op = op;
+                this.Operator = @operator;
                 this.Right = right;
             }
 
@@ -119,15 +139,49 @@ namespace CsLox
             }
 
             public Expr Left { get; }
-            public Token Op { get; }
+            public Token Operator { get; }
             public Expr Right { get; }
+        }
+
+        public class Set : Expr
+        {
+            public Set(Expr @object, Token name, Expr value)
+            {
+                this.Object = @object;
+                this.Name = name;
+                this.Value = value;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.VisitSetExpr(this);
+            }
+
+            public Expr Object { get; }
+            public Token Name { get; }
+            public Expr Value { get; }
+        }
+
+        public class This : Expr
+        {
+            public This(Token keyword)
+            {
+                this.Keyword = keyword;
+            }
+
+            public override T Accept<T>(IVisitor<T> visitor)
+            {
+                return visitor.VisitThisExpr(this);
+            }
+
+            public Token Keyword { get; }
         }
 
         public class Unary : Expr
         {
-            public Unary(Token op, Expr right)
+            public Unary(Token @operator, Expr right)
             {
-                this.Op = op;
+                this.Operator = @operator;
                 this.Right = right;
             }
 
@@ -136,7 +190,7 @@ namespace CsLox
                 return visitor.VisitUnaryExpr(this);
             }
 
-            public Token Op { get; }
+            public Token Operator { get; }
             public Expr Right { get; }
         }
 

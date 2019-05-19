@@ -11,8 +11,13 @@ namespace CsLox
             throw new System.NotImplementedException();
         }
 
-        public string VisitBinaryExpr(Expr.Binary expr) => Parenthesize(expr.Op.Lexeme, expr.Left, expr.Right);
+        public string VisitBinaryExpr(Expr.Binary expr) => Parenthesize(expr.Operator.Lexeme, expr.Left, expr.Right);
         public string VisitCallExpr(Expr.Call expr)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public string VisitGetExpr(Expr.Get expr)
         {
             throw new System.NotImplementedException();
         }
@@ -26,7 +31,7 @@ namespace CsLox
             throw new System.NotImplementedException();
         }
 
-        public string VisitUnaryExpr(Expr.Unary expr) => Parenthesize(expr.Op.Lexeme, expr.Right);
+        public string VisitUnaryExpr(Expr.Unary expr) => Parenthesize(expr.Operator.Lexeme, expr.Right);
 
         public string VisitVariableExpr(Expr.Variable expr)
         {

@@ -19,17 +19,21 @@ namespace Tools
             DefineAst(outputDir, "Expr", new List<string>(new string[]
             {
                 "Assign   : Token name, Expr value",
-                "Binary   : Expr left, Token op, Expr right",
+                "Binary   : Expr left, Token @operator, Expr right",
                 "Call     : Expr callee, Token paren, IEnumerable<Expr> arguments",
+                "Get      : Expr @object, Token name",
                 "Grouping : Expr expression",
                 "Literal  : object value",
-                "Logical  : Expr left, Token op, Expr right",
-                "Unary    : Token op, Expr right",
+                "Logical  : Expr left, Token @operator, Expr right",
+                "Set      : Expr @object, Token name, Expr value",
+                "This     : Token keyword",
+                "Unary    : Token @operator, Expr right",
                 "Variable : Token name"
             }));
             DefineAst(outputDir, "Stmt", new List<string>(new string[]
             {
                 "Block      : IEnumerable<Stmt> statements",
+                "Class      : Token name, IEnumerable<Stmt.Function> methods",
                 "Expression : Expr expression_",
                 "Function   : Token name, List<Token> parameters, List<Stmt> body",
                 "If         : Expr condition, Stmt thenBranch, Stmt elseBranch",
@@ -126,7 +130,14 @@ namespace Tools
 
         private static string CapitalizeWord(string str)
         {
-            return Regex.Replace(str, @"(?(\s\w)\s\w|(^\w))", c => c.Value.ToUpper());
+            //Console.WriteLine(str);
+            string newStr = str.Replace("@", "");
+            if (str.Split(" ").Length == 1)
+                return Regex.Replace(newStr, @"(?(\s\w)\s\w|(^\w))", c => c.Value.ToUpper());
+
+            string left = newStr.Split(" ")[0].Trim();
+            string right = newStr.Split(" ")[1].Trim();
+            return left + " " + Regex.Replace(right, @"(?(\s\w)\s\w|(^\w))", c => c.Value.ToUpper());
         }
     }
 }
