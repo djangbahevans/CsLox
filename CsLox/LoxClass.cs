@@ -4,20 +4,17 @@ namespace CsLox
 {
     internal class LoxClass : ILoxCallable
     {
-        internal string Name { get; }
         private readonly IDictionary<string, LoxFunction> _methods;
-
-        public LoxClass(string name, IDictionary<string, LoxFunction> methods)
+        public LoxClass(string name, LoxClass superclass, IDictionary<string, LoxFunction> methods)
         {
-            this.Name = name;
+
+            Name = name;
+            Superclass = superclass;
             _methods = methods;
         }
 
-        public override string ToString()
-        {
-            return Name;
-        }
-
+        public LoxClass Superclass { get; set; }
+        internal string Name { get; }
         public int Arity()
         {
             LoxFunction initializer = FindMethod("init");
@@ -37,7 +34,14 @@ namespace CsLox
         {
             if (_methods.ContainsKey(name)) return _methods[name];
 
+            if (Superclass != null) return Superclass.FindMethod(name);
+
             return null;
+        }
+
+        public override string ToString()
+        {
+            return Name;
         }
     }
 }

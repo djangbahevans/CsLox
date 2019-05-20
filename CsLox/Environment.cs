@@ -4,16 +4,16 @@ namespace CsLox
 {
     internal class Environment
     {
-        private readonly Environment _enclosing;
+        public Environment Enclosing { get; }
         private readonly Dictionary<string, object> _values = new Dictionary<string, object>();
         public Environment()
         {
-            _enclosing = null;
+            Enclosing = null;
         }
 
         public Environment(Environment enclosing)
         {
-            this._enclosing = enclosing;
+            Enclosing = enclosing;
         }
 
         public void AssignAt(int distance, Token name, object value)
@@ -29,7 +29,7 @@ namespace CsLox
         public object Get(Token name)
         {
             if (_values.ContainsKey(name.Lexeme)) return _values[name.Lexeme];
-            if (_enclosing != null) return _enclosing.Get(name);
+            if (Enclosing != null) return Enclosing.Get(name);
             throw new RuntimeError(name, $"Undefined variable '{name.Lexeme}'");
         }
 
@@ -46,8 +46,8 @@ namespace CsLox
                 return;
             }
 
-            if (_enclosing == null) throw new RuntimeError(name, $"Undefined variable '{name.Lexeme}'.");
-            _enclosing.Assign(name, value);
+            if (Enclosing == null) throw new RuntimeError(name, $"Undefined variable '{name.Lexeme}'.");
+            Enclosing.Assign(name, value);
             return;
         }
         private Environment Ancestor(int distance)
@@ -55,7 +55,7 @@ namespace CsLox
             Environment environment = this;
             for (int i = 0; i < distance; i++)
             {
-                environment = environment._enclosing;
+                environment = environment.Enclosing;
             }
 
             return environment;

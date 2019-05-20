@@ -4,8 +4,8 @@ namespace CsLox
 {
     internal class LoxInstance
     {
-        private readonly Dictionary<string, object> fields = new Dictionary<string, object>();
-        private LoxClass _class;
+        private readonly Dictionary<string, object> _fields = new Dictionary<string, object>();
+        private readonly LoxClass _class;
 
         public LoxInstance(LoxClass @class)
         {
@@ -14,7 +14,7 @@ namespace CsLox
 
         public object Get(Token name)
         {
-            if (fields.ContainsKey(name.Lexeme)) return fields[name.Lexeme];
+            if (_fields.ContainsKey(name.Lexeme)) return _fields[name.Lexeme];
 
             LoxFunction method = _class.FindMethod(name.Lexeme);
             if (method != null) return method.Bind(this);
@@ -24,7 +24,7 @@ namespace CsLox
 
         public void Set(Token name, object value)
         {
-            fields.Add(name.Lexeme, value);
+            _fields.Add(name.Lexeme, value);
         }
 
         public override string ToString()

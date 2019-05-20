@@ -17,7 +17,8 @@ namespace CsLox
         private enum ClassType
         {
             NONE,
-            CLASS
+            CLASS,
+            SUBCLASS
         }
 
         private enum FunctionType
@@ -64,6 +65,21 @@ namespace CsLox
             Declare(stmt.Name);
             Define(stmt.Name);
 
+            if (stmt.Superclass != null && stmt.Name.Lexeme.Equals(stmt.Superclass.Name.Lexeme))
+                Lox.Error(stmt.Superclass.Name, "A class cannot inherit from itself.");
+
+            if (stmt.Superclass != null)
+            {
+                _currentClass = ClassType.SUBCLASS;
+                Resolve(stmt.Superclass);
+            }
+
+            if (stmt.Superclass != null)
+            {
+                BeginScope();
+                _scopes.Peek().Add("super", true);
+            }
+
             BeginScope();
             _scopes.Peek().Add("this", true);
 
@@ -75,6 +91,8 @@ namespace CsLox
             }
 
             EndScope();
+
+            if (stmt.Superclass != null) EndScope();
 
             _currentClass = enclosingClass;
             return null;
@@ -136,12 +154,10 @@ namespace CsLox
         {
             if (_currentFunction == FunctionType.NONE)
                 Lox.Error(stmt.Keyword, "Cannot return from top-level code.");
-            if (stmt.Value != null)
-            {
-                if (_currentFunction == FunctionType.INITIALIZER)
-                    Lox.Error(stmt.Keyword, "Cannot return a value from an initializer.");
-                Resolve(stmt.Value);
-            }
+            if (stmt.Value == null) return null;
+            if (_currentFunction == FunctionType.INITIALIZER)
+                Lox.Error(stmt.Keyword, "Cannot return a value from an initializer.");
+            Resolve(stmt.Value);
             return null;
         }
 
@@ -149,6 +165,16 @@ namespace CsLox
         {
             Resolve(expr.Value);
             Resolve(expr.Object);
+            return null;
+        }
+
+        public object VisitSuperExpr(Expr.Super expr)
+        {
+            if (_currentClass == ClassType.NONE)
+                Lox.Error(expr.Keyword, "Cannot use 'super' outside of a class.");
+            else if (_currentClass != ClassType.SUBCLASS)
+                Lox.Error(expr.Keyword, "Cannot use 'super' in a class with no superclass");
+            ResolveLocal(expr, expr.Keyword);
             return null;
         }
 

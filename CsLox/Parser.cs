@@ -175,6 +175,13 @@ namespace CsLox
         private Stmt ClassDeclaration()
         {
             Token name = Consume(IDENTIFIER, "Expect class name.");
+
+            Expr.Variable superclass = null;
+            if (Match(LESS))
+            {
+                Consume(IDENTIFIER, "Expect superclass name");
+                superclass = new Expr.Variable(Previous());
+            }
             Consume(LEFT_BRACE, "Expect '{' before class body.");
 
             List<Stmt.Function> methods = new List<Stmt.Function>();
@@ -182,7 +189,7 @@ namespace CsLox
 
             Consume(RIGHT_BRACE, "Expect '}' after class body");
 
-            return new Stmt.Class(name, methods);
+            return new Stmt.Class(name, superclass, methods);
         }
 
         private Expr Comparison()
@@ -362,6 +369,14 @@ namespace CsLox
             if (Match(NUMBER, STRING)) return new Expr.Literal(Previous().Literal);
 
             if (Match(THIS)) return new Expr.This(Previous());
+
+            if (Match(SUPER))
+            {
+                Token keyword = Previous();
+                Consume(DOT, "Expect '.' after 'super'.");
+                Token method = Consume(IDENTIFIER, "Expect superclass method name.");
+                return new Expr.Super(keyword, method);
+            }
 
             if (Match(IDENTIFIER)) return new Expr.Variable(Previous());
 

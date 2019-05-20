@@ -39,12 +39,10 @@ namespace CsLox
             }
             catch (Return returnValue)
             {
-                if (_isInitializer) return _closure.GetAt(0, "this");
-                return returnValue.Value;
+                return _isInitializer ? _closure.GetAt(0, "this") : returnValue.Value;
             }
 
-            if (_isInitializer) return _closure.GetAt(0, "this");
-            return null;
+            return _isInitializer ? _closure.GetAt(0, "this") : null;
         }
 
         public override string ToString() => $"<fn {_declaration.Name.Lexeme}>";

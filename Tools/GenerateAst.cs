@@ -26,6 +26,7 @@ namespace Tools
                 "Literal  : object value",
                 "Logical  : Expr left, Token @operator, Expr right",
                 "Set      : Expr @object, Token name, Expr value",
+                "Super    : Token keyword, Token method",
                 "This     : Token keyword",
                 "Unary    : Token @operator, Expr right",
                 "Variable : Token name"
@@ -33,7 +34,7 @@ namespace Tools
             DefineAst(outputDir, "Stmt", new List<string>(new string[]
             {
                 "Block      : IEnumerable<Stmt> statements",
-                "Class      : Token name, IEnumerable<Stmt.Function> methods",
+                "Class      : Token name, Expr.Variable superclass, IEnumerable<Stmt.Function> methods",
                 "Expression : Expr expression_",
                 "Function   : Token name, List<Token> parameters, List<Stmt> body",
                 "If         : Expr condition, Stmt thenBranch, Stmt elseBranch",

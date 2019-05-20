@@ -37,9 +37,10 @@ namespace CsLox
 
         public class Class : Stmt
         {
-            public Class(Token name, IEnumerable<Stmt.Function> methods)
+            public Class(Token name, Expr.Variable superclass, IEnumerable<Stmt.Function> methods)
             {
                 this.Name = name;
+                this.Superclass = superclass;
                 this.Methods = methods;
             }
 
@@ -49,6 +50,7 @@ namespace CsLox
             }
 
             public Token Name { get; }
+            public Expr.Variable Superclass { get; }
             public IEnumerable<Stmt.Function> Methods { get; }
         }
 
